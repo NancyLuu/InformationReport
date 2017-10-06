@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>資訊回報平台</title>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<link rel="icon" type="image/png" href="img/icon.png">
+	<link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css">
+	<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto">
+	<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Montserrat">
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+	<link href="style.css" rel="stylesheet" type="text/css">
+</head>
+<body>
+
+	<!-- Overlay effect when opening sidebar on small screens -->
+		<div class=" w3-container w3-center color_gray" style="padding-right: 0px !important; padding-left: 0px !important">
+		<button onclick="to_admin()" class="upload_btn">+</button>
+		    <h3 class="header_div w3-wide"><b>資訊回報平台</b></h3>
+
+			<select id=" " name=" ">
+		      <option value=" ">天然災害</option>
+			  <option value=" ">交通事故</option>
+			  <option value=" ">警察臨檢</option>
+		      <option value=" ">其他</option>
+			</select>
+		 <input class="select_btn" id=" " type="button" value="確認">
+		  
+		</div>	  
+		<div id="map" class="down" style="height: 80%;"></div>
+		
+		<div class="w3-center w3-padding-small">©2017 - Zan-Ging Inc. </div>
+	</div>
+
+ <script>
+ 	function to_admin()
+ 	{
+ 		window.location.replace("index.html");
+ 	}
+    // Accordion 
+		function myAccFunc() {
+		    var x = document.getElementById("demoAcc");
+		    if (x.className.indexOf("w3-show") == -1) {
+		        x.className += " w3-show";
+		    } else {
+		        x.className = x.className.replace(" w3-show", "");
+		    }
+		}
+
+		// Click on the "Jeans" link on page load to open the accordion for demo purposes
+		//document.getElementById("myBtn").click();
+
+
+		// Script to open and close sidebar
+		function w3_open() {
+		    document.getElementById("mySidebar").style.display = "block";
+		    document.getElementById("myOverlay").style.display = "block";
+		}
+		 
+		function w3_close() {
+		    document.getElementById("mySidebar").style.display = "none";
+		    document.getElementById("myOverlay").style.display = "none";
+		}
+		function geoNo(evt){
+			alert("GPS取得失敗");
+		}
+
+			var map;
+			var sign = [];
+			var index = 0;
+			var markers = [];
+			var event = [];
+			if( navigator.geolocation ) {
+					// 支援GPS地理定位
+					navigator.geolocation.getCurrentPosition( initMap, geoNo);
+				}
+				else {
+					alert("目前GPS無法定位....!!!");
+				}
+			function initMap(evt) {
+				
+				//取得現在位置
+				var location = {lat: evt.coords.latitude, lng: evt.coords.longitude};
+				map = new google.maps.Map(document.getElementById('map'), {
+					center: new google.maps.LatLng(evt.coords.latitude, evt.coords.longitude),
+					zoom: 17
+				});
+				map.addListener('click', function(e) {
+					getLatLng(e.latLng, map);
+				});
+				//create infowindow
+				var infowindow_c = new google.maps.InfoWindow({
+					content: "現在位置"
+				});
+				var m = new google.maps.Marker({
+					position: location,
+					map:map,
+					tilte:'test',
+					icon: 'http://maps.google.com/mapfiles/kml/pal4/icon21.png'
+				});
+				//add event listener to open the infowindow when clicked
+				m.addListener('click', function() {
+					infowindow_c.open(map, m);
+				});
+				var infoWindow = new google.maps.InfoWindow;
+
+				// Change this depending on the name of your PHP or XML file
+				downloadUrl('./select.php', function(data) {
+					var xml = data.responseXML;
+					var markers = xml.documentElement.getElementsByTagName('marker');
+					Array.prototype.forEach.call(markers, function(markerElem) {
+						var ID = markerElem.getAttribute('ID');
+						var time = markerElem.getAttribute('time');
+						var location = markerElem.getAttribute('location');
+						var event = markerElem.getAttribute('event');
+						var turn_in = markerElem.getAttribute('turn_in');
+						var point = new google.maps.LatLng(
+							parseFloat(markerElem.getAttribute('Lat')),
+							parseFloat(markerElem.getAttribute('Lng')));
+
+						var infowincontent = document.createElement('div');
+						
+						var strong = document.createElement('strong');
+						strong.textContent = event
+						infowincontent.appendChild(strong);
+						infowincontent.appendChild(document.createElement('br'));
+						
+						var text1 = document.createElement('text');
+						text1.textContent = "時間: " + time;
+						infowincontent.appendChild(text1);
+						infowincontent.appendChild(document.createElement('br'));
+						
+						var text2 = document.createElement('text');					
+						text2.textContent = " 地點:" + location;
+						infowincontent.appendChild(text2);
+						infowincontent.appendChild(document.createElement('br'));
+						
+						var text3 = document.createElement('text');					
+						text3.textContent = " 被檢舉:" + turn_in +"次";
+						infowincontent.appendChild(text3);
+						infowincontent.appendChild(document.createElement('br'));						
+						
+						var my_form = document.createElement("FORM");
+						my_form.method='POST';
+						my_form.action='./turn_in.php?ID='+ID+'&turn_in='+turn_in;
+
+						var btn = document.createElement("BUTTON");
+						btn.textContent = "檢舉";
+						btn.type = 'submit';
+						my_form.appendChild(btn);
+						
+						infowincontent.appendChild(my_form);
+						
+/*						var icon = customLabel[type] || {};*/
+						var marker = new google.maps.Marker({
+							map: map,
+							position: point,
+							icon: 'http://maps.google.com/mapfiles/kml/pal3/icon59.png'
+						});
+						marker.addListener('click', function() {
+							infoWindow.setContent(infowincontent);
+							infoWindow.open(map, marker);
+						});
+					});
+				});
+			}
+
+			function downloadUrl(url, callback) {
+				var request = window.ActiveXObject ?
+					new ActiveXObject('Microsoft.XMLHTTP') :
+					new XMLHttpRequest;
+
+				request.onreadystatechange = function() {
+					if (request.readyState == 4) {
+						request.onreadystatechange = doNothing;
+						callback(request, request.status);
+					}
+				};
+
+			request.open('GET', url, true);
+			request.send(null);
+		}
+		function doNothing() {}
+				function setMapOnAll(map) {
+			for (var i = 0; i < markers.length; i++) {
+				markers[i].setMap(map);
+			}
+		}
+		function setEvent(map){
+			for(var i = 0; i < event.length ; i++){
+				event[i].setMap(map);
+			}
+		}
+		function getLatLng(latLng, map) {
+			setMapOnAll(null);
+			marker = [];
+			var marker = new google.maps.Marker({
+			position: latLng,
+			map: map
+			});
+			markers.push(marker);
+			document.getElementById("Lat").value = latLng.lat();
+			document.getElementById("Lng").value = latLng.lng();
+			
+		}
+		</script>
+   		 <script async="" defer="defer" src="https://maps.googleapis.com/maps/api/js?key=AIzaSyC0YHjxhTqUPSIQtCRRLPsKmYZ8NUmiX00&callback=initMap">
+		</script>
+</body>
+</html>
